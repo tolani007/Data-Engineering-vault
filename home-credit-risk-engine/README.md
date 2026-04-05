@@ -1,4 +1,4 @@
-# 🏦 Home Credit Default Risk Engine
+#  Home Credit Default Risk Engine
 
 > *An end-to-end distributed data engineering and machine learning pipeline built on Databricks Serverless + PySpark, trained on 307,511 real loan applications to identify borrowers at risk of default.*
 
@@ -19,7 +19,7 @@ A scrollable, executive-grade visual narrative of the findings — built for non
 
 ---
 
-## 🎯 Business Problem
+## Business Problem
 
 Home Credit serves borrowers who are often invisible to traditional banks — people with little or no formal credit history. While this is a commercially significant mission, it introduces a structural risk: **without a credit trail, how do you reliably identify who can repay?**
 
@@ -27,7 +27,7 @@ Our analysis across **307,511 real loan applications** reveals that **8.07% of b
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
 flowchart TD
@@ -53,7 +53,7 @@ flowchart TD
 
 ---
 
-## 📊 Key Results
+## Key Results
 
 | Metric | Value |
 |--------|-------|
@@ -67,7 +67,7 @@ flowchart TD
 
 ---
 
-## 🔬 Top 5 Default Predictors
+## Top 5 Default Predictors
 
 | Rank | Feature | Source | Importance |
 |------|---------|--------|-----------|
@@ -82,7 +82,7 @@ flowchart TD
 
 ---
 
-## 🧱 Technical Highlights
+## Technical Highlights
 
 ### Distributed Data Engineering (PySpark)
 - Ingested 3 relational Delta Tables (307K + 1.7M + 1.6M rows) on Databricks Serverless
@@ -127,7 +127,7 @@ All model runs are automatically logged via **Databricks MLflow Autologging**:
 
 ---
 
-## 📁 File Structure
+## File Structure
 
 ```
 home-credit-risk-engine/
@@ -139,7 +139,7 @@ The full PySpark notebook lives in your Databricks Workspace: `Home Credit Defau
 
 ---
 
-## 🚀 How to Reproduce
+## How to Reproduce
 
 1. **Create a Databricks Free Trial** at [databricks.com](https://databricks.com)
 2. **Download the dataset** from [Kaggle: Home Credit Default Risk](https://www.kaggle.com/c/home-credit-default-risk)
@@ -149,7 +149,7 @@ The full PySpark notebook lives in your Databricks Workspace: `Home Credit Defau
 
 ---
 
-## 💡 Business Recommendations
+## Business Recommendations
 
 Based on the model's feature importances and financial projections, three operational decisions are recommended:
 
@@ -159,7 +159,7 @@ Based on the model's feature importances and financial projections, three operat
 
 ---
 
-## 🛠️ Stack
+## Stack
 
 | Layer | Technology |
 |-------|-----------|
