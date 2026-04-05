@@ -13,7 +13,8 @@
 
 ## 📖 Data Story
 
-**→ [View the Interactive Data Story]([./index.html](https://tolani007.github.io/Data-Engineering-vault/home-credit-risk-engine/))** *(open locally or via GitHub Pages)*
+**→ [View the Interactive Data Story]((https://tolani007.github.io/Data-Engineering-vault/home-credit-risk-engine/](https://tolani007.github.io/Data-Engineering-vault/home-credit-risk-engine/)))** *(open locally or via GitHub Pages)*
+**→ [View the Interactive Data Story]())** *(open locally or via GitHub Pages)*
 
 A scrollable, executive-grade visual narrative of the findings — built for non-technical stakeholders, VPs, and Directors who need answers, not code.
 
