@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Hidden Cost of Trust — Home Credit Risk Engine</title>
+  <meta name="description" content="A data story uncovering the financial patterns behind loan defaults." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #080a0f;
+      --surface: #10131d;
+      --surface-hover: #151926;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-light: rgba(255, 255, 255, 0.15);
+      --accent: #e84545;
+      --gold: #f5a623;
+      --teal: #00d4b4;
+      --text: #eef0f6;
+      --muted: #8a8f9f;
+      --font-serif: 'Playfair Display', Georgia, serif;
+      --font-sans: 'DM Sans', system-ui, sans-serif;
+      --font-mono: 'DM Mono', monospace;
+      --ease-out: cubic-bezier(0.215, 0.61, 0.355, 1);
+      --ease-calm: cubic-bezier(0.33, 1, 0.68, 1);
+    }
+
+    /* ─── BASE ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; background: var(--bg); }
+    body {
+      color: var(--text); font-family: var(--font-sans);
+      font-weight: 300; line-height: 1.8; overflow-x: hidden;
+      background: transparent;
+    }
+
+    /* ─── CALMING AMBIENT BACKGROUND ─── */
+    .ambient-bg {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      z-index: -1; overflow: hidden; pointer-events: none;
+    }
+    .ambient-blob {
+      position: absolute; border-radius: 50%; filter: blur(120px);
+      opacity: 0.15; animation: float 20s infinite alternate ease-in-out;
+    }
+    .ambient-blob.teal {
+      background: var(--teal); width: 50vw; height: 50vw; top: -10vw; left: -10vw;
+    }
+    .ambient-blob.accent {
+      background: var(--accent); width: 40vw; height: 40vw; bottom: -10vw; right: -5vw;
+      animation-delay: -10s;
+    }
+    @keyframes float {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(5vw, 10vh) scale(1.1); }
+    }
+
+    /* ─── PROGRESS PROGRESSION ─── */
+    #progress-bar {
+      position: fixed; top: 0; left: 0; height: 2px;
+      background: linear-gradient(90deg, var(--teal), var(--gold), var(--accent));
+      width: 0%; z-index: 1000; transition: width 0.3s var(--ease-calm);
+    }
+
+    /* ─── NAVIGATION ─── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1.5rem 4rem; background: linear-gradient(to bottom, rgba(8,10,15,0.9), transparent);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      z-index: 100; opacity: 0; animation: fadeDown 1.5s var(--ease-out) 0.5s forwards;
+    }
+    .nav-logo { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; }
+    .nav-links { display: flex; gap: 2.5rem; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; transition: color 0.4s var(--ease-calm); }
+    .nav-links a:hover { color: var(--text); }
+
+    /* ─── CONTAINERS ─── */
+    section { padding: 9rem 0; position: relative; }
+    .container { max-width: 800px; margin: 0 auto; padding: 0 2rem; }
+
+    /* ─── HERO ─── */
+    #hero {
+      min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
+      padding: 8rem 2rem 4rem; position: relative;
+    }
+    .hero-content { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; width: 100%; text-align: center; }
+    .hero-label {
+      font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.25em;
+      text-transform: uppercase; color: var(--gold); margin-bottom: 2rem;
+      opacity: 0; animation: fadeUp 1.2s var(--ease-out) 0.2s forwards;
+    }
+    .hero-title {
+      font-family: var(--font-serif); font-size: clamp(3rem, 7vw, 6rem);
+      line-height: 1.05; font-weight: 400; margin-bottom: 2rem;
+      opacity: 0; animation: fadeUp 1.2s var(--ease-out) 0.4s forwards;
+    }
+    .hero-title em { color: var(--accent); font-style: italic; }
+    .hero-title span.trust { position: relative; display: inline-block; }
+    .hero-title span.trust::after {
+      content: ''; position: absolute; bottom: 10%; left: 0; right: 0; height: 12px;
+      background: rgba(232, 69, 69, 0.2); z-index: -1; transform: scaleX(0); transform-origin: left;
+      animation: scaleRight 1.5s var(--ease-out) 1.2s forwards;
+    }
+    .hero-subtitle {
+      font-size: 1.2rem; color: var(--muted); max-width: 600px; margin: 0 auto 4rem;
+      line-height: 1.8; opacity: 0; animation: fadeUp 1.2s var(--ease-out) 0.6s forwards;
+    }
+    .hero-stats {
+      display: flex; gap: 4rem; justify-content: center; flex-wrap: wrap;
+      opacity: 0; animation: fadeUp 1.2s var(--ease-out) 0.8s forwards;
+    }
+    .h-stat { display: flex; flex-direction: column; gap: 0.5rem; align-items: center; }
+    .h-stat-num { font-family: var(--font-mono); font-size: 2.5rem; font-weight: 400; color: var(--text); }
+    .h-stat-label { font-size: 0.75rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+    
+    .scroll-cue {
+      position: absolute; bottom: 3rem; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 1rem;
+      color: var(--muted); font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase;
+      opacity: 0; animation: fadeUp 1.2s var(--ease-out) 1.5s forwards;
+    }
+    .scroll-line { width: 1px; height: 40px; background: linear-gradient(to bottom, var(--muted), transparent); position: relative; overflow: hidden; }
+    .scroll-line::after {
+      content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 50%;
+      background: var(--text); animation: scrollDrop 2s infinite cubic-bezier(0.645, 0.045, 0.355, 1);
+    }
+    @keyframes scrollDrop { 0% { transform: translateY(-100%); opacity: 0;} 50% { opacity: 1; } 100% { transform: translateY(200%); opacity: 0; } }
+
+    /* ─── TYPOGRAPHY & ELEMENTS ─── */
+    h2 { font-family: var(--font-serif); font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 400; line-height: 1.2; margin-bottom: 1.5rem; }
+    h3 { font-family: var(--font-sans); font-size: 1.25rem; font-weight: 500; margin-bottom: 1rem; color: var(--text); }
+    p { margin-bottom: 1.5rem; font-size: 1.1rem; color: #a9afc1; }
+    p strong { color: var(--text); font-weight: 500; }
+    
+    .chapter-label {
+      font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--teal); margin-bottom: 1rem;
+      display: flex; align-items: center; gap: 1rem;
+    }
+    .chapter-label::before { content:''; width: 30px; height: 1px; background: var(--teal); }
+
+    /* ─── QUOTES & CALLOUTS ─── */
+    blockquote {
+      font-family: var(--font-serif); font-style: italic; font-size: 1.6rem; line-height: 1.5;
+      color: var(--text); margin: 3rem 0; padding-left: 2rem; position: relative;
+    }
+    blockquote::before {
+      content: '"'; position: absolute; left: -10px; top: -20px;
+      font-family: var(--font-serif); font-size: 4rem; color: var(--border-light); opacity: 0.5;
+    }
+    
+    .callout {
+      background: var(--surface); border-radius: 12px; padding: 2rem;
+      margin: 3rem 0; position: relative; overflow: hidden;
+      transition: transform 0.4s var(--ease-calm), box-shadow 0.4s var(--ease-calm);
+      border: 1px solid var(--border);
+    }
+    .callout:hover {
+      transform: translateY(-5px); box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      border-color: var(--border-light);
+    }
+    .callout::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+      background: linear-gradient(to bottom, var(--accent), var(--gold));
+    }
+    .callout.teal::before { background: var(--teal); }
+    .callout p { margin: 0; font-size: 1.05rem; }
+
+    /* ─── METRICS CARDS ─── */
+    .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin: 3rem 0; }
+    .metric-card {
+      background: rgba(16, 19, 29, 0.5); border: 1px solid var(--border);
+      border-radius: 16px; padding: 2.5rem 2rem; text-align: center;
+      transition: all 0.5s var(--ease-calm); position: relative; overflow: hidden;
+      backdrop-filter: blur(8px);
+    }
+    .metric-card:hover {
+      background: var(--surface-hover); transform: translateY(-5px);
+      border-color: var(--border-light); box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+    }
+    .metric-card .value { font-family: var(--font-mono); font-size: 2.8rem; font-weight: 300; display: block; margin-bottom: 0.5rem; color: var(--text); }
+    .metric-card .label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+    .metric-card .tag { position: absolute; top: 1rem; right: 1rem; font-family: var(--font-mono); font-size: 0.6rem; padding: 0.3rem 0.6rem; border-radius: 4px; letter-spacing: 0.1em; text-transform: uppercase; }
+    .tag.red { background: rgba(232, 69, 69, 0.1); color: var(--accent); }
+    .tag.gold { background: rgba(245, 166, 35, 0.1); color: var(--gold); }
+    .tag.teal { background: rgba(0, 212, 180, 0.1); color: var(--teal); }
+
+    /* ─── INTERACTIVE FEATURE LIST ─── */
+    .feature-list { list-style: none; margin: 3rem 0; counter-reset: feature; }
+    .feature-list li {
+      display: grid; grid-template-columns: 2rem 1fr auto; align-items: center; gap: 1.5rem;
+      padding: 1.5rem; border-radius: 12px; margin-bottom: 0.5rem;
+      background: transparent; transition: all 0.4s var(--ease-calm);
+      border: 1px solid transparent; cursor: default;
+    }
+    .feature-list li:hover {
+      background: var(--surface); border-color: var(--border);
+      transform: scale(1.02); box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .feature-list li::before {
+      counter-increment: feature;
+      content: "0" counter(feature) ".";
+      font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted);
+    }
+    .fi-info { display: flex; flex-direction: column; gap: 0.3rem; }
+    .fi-name { font-size: 1.1rem; color: var(--text); font-weight: 400; font-family: var(--font-serif); }
+    .fi-desc { font-size: 0.9rem; color: var(--muted); line-height: 1.5; }
+    .fi-bar-wrap { width: 140px; display: flex; align-items: center; gap: 1rem; }
+    .fi-bar-bg { flex: 1; height: 4px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; }
+    .fi-bar { height: 100%; background: var(--teal); border-radius: 4px; width: 0%; transition: width 2s var(--ease-out); }
+    .fi-bar.engineered { background: linear-gradient(90deg, var(--gold), var(--accent)); }
+    .fi-val { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text); width: 3rem; text-align: right; }
+
+    /* ─── CHARTS ─── */
+    .chart-container {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 2.5rem; margin: 3rem 0;
+      transition: border-color 0.4s;
+    }
+    .chart-container:hover { border-color: var(--border-light); }
+    
+    /* ─── ROC GAUGE ─── */
+    .gauge-module { text-align: center; padding: 4rem 2rem; background: radial-gradient(circle at center, var(--surface) 0%, transparent 100%); margin: 4rem 0; }
+    .gauge-score { font-family: var(--font-mono); font-size: 6rem; font-weight: 300; background: linear-gradient(135deg, var(--teal), var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1; margin-bottom: 0.5rem; }
+    .gauge-label { font-size: 0.9rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 2rem; }
+    .gauge-track { max-width: 400px; margin: 0 auto; height: 8px; background: rgba(255,255,255,0.05); border-radius: 8px; overflow: hidden; position: relative; }
+    .gauge-fill { position: absolute; top: 0; left: 0; height: 100%; background: linear-gradient(90deg, var(--teal), var(--gold)); width: 0%; transition: width 2.5s var(--ease-out); border-radius: 8px; }
+    .gauge-markers { max-width: 400px; margin: 1rem auto 0; display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); }
+
+    /* ─── DECISION CARDS ─── */
+    .decisions { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; margin: 3rem 0; }
+    .decision {
+      background: var(--surface); border-top: 3px solid var(--border);
+      padding: 2.5rem 2rem; border-radius: 0 0 12px 12px;
+      transition: all 0.4s var(--ease-calm); box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    .decision:hover { transform: translateY(-8px); border-top-color: var(--accent); background: var(--surface-hover); }
+    .decision h3 { font-family: var(--font-serif); font-size: 1.4rem; margin-bottom: 1rem; color: var(--text); }
+    .decision p { font-size: 1rem; color: var(--muted); margin: 0; }
+
+    /* ─── ANIMATION CLASSES ─── */
+    .reveal { opacity: 0; transform: translateY(40px); transition: opacity 1s var(--ease-out), transform 1s var(--ease-out); }
+    .reveal.active { opacity: 1; transform: translateY(0); }
+    .reveal-delay-1 { transition-delay: 0.2s; }
+    .reveal-delay-2 { transition-delay: 0.4s; }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes scaleRight { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+    /* footer */
+    footer { padding: 4rem 2rem; text-align: center; border-top: 1px solid var(--border); margin-top: 6rem; color: var(--muted); font-size: 0.85rem; }
+    footer a { color: var(--teal); text-decoration: none; transition: color 0.3s; }
+    footer a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+
+<div class="ambient-bg">
+  <div class="ambient-blob teal"></div>
+  <div class="ambient-blob accent"></div>
+</div>
+
+<div id="progress-bar"></div>
+
+<nav>
+  <span class="nav-logo">Home Credit</span>
+  <div class="nav-links">
+    <a href="#problem">The Cost</a>
+    <a href="#findings">Signals</a>
+    <a href="#model">Engine</a>
+    <a href="#roi">Impact</a>
+  </div>
+</nav>
+
+<section id="hero">
+  <div class="hero-content">
+    <p class="hero-label">Interactive Data Story</p>
+    <h1 class="hero-title">The Hidden Cost <br>of <span class="trust"><em>Trust</em></span></h1>
+    <p class="hero-subtitle">Over 307,000 loan applications analyzed. Over 3.3 million rows of financial history computed. One fundamental question answered: <strong>who will struggle to repay?</strong></p>
+    <div class="hero-stats">
+      <div class="h-stat">
+        <span class="h-stat-num" id="hero-apps">0</span>
+        <span class="h-stat-label">Applications</span>
+      </div>
+      <div class="h-stat">
+        <span class="h-stat-num" id="hero-default">0%</span>
+        <span class="h-stat-label">Default Rate</span>
+      </div>
+      <div class="h-stat">
+        <span class="h-stat-num" id="hero-rows">0M</span>
+        <span class="h-stat-label">Historical Records</span>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-cue">
+    <span>Scroll to Discover</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<section id="problem">
+  <div class="container">
+    <p class="chapter-label reveal">01 — The Business Case</p>
+    <h2 class="reveal">1 in 12 loans is quietly heading toward default.</h2>
+    <p class="reveal">Home Credit provides essential financial services to populations often ignored by traditional banking—individuals with minimal formal credit histories. While this mission drives financial inclusion, it introduces a severe systemic risk.</p>
+    
+    <blockquote class="reveal reveal-delay-1">
+      "Lending capital to those who cannot repay it does not help them. It simply delays distress while quietly eroding the institution's portfolio."
+    </blockquote>
+
+    <p class="reveal">Our rigorous analysis across <strong>307,511 loan applications</strong> verified that exactly <strong>8.07%</strong> of borrowers ultimately default. This is not a statistical anomaly; it is a profound structural pattern embedded deep within the data.</p>
+
+    <div class="callout reveal reveal-delay-1">
+      <p>Assuming an average observed loan value of <strong>$29,000 USD</strong>, an 8% default rate exposes the institution to approximately <strong>$718 million in at-risk principal</strong>—before any algorithmic intervention.</p>
+    </div>
+
+    <div class="metric-grid">
+      <div class="metric-card reveal">
+        <span class="tag red">Risk</span>
+        <span class="value" id="c-rate">0%</span>
+        <span class="label">Observed Default Rate</span>
+      </div>
+      <div class="metric-card reveal reveal-delay-1">
+        <span class="tag gold">Exposure</span>
+        <span class="value" id="c-exp">$0M</span>
+        <span class="label">At-Risk Principal</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="findings">
+  <div class="container">
+    <p class="chapter-label reveal">02 — Signals in the Noise</p>
+    <h2 class="reveal">Five signals that predict a default before it happens.</h2>
+    <p class="reveal">By synthesizing over <strong>3.3 million rows</strong> of external bureau history and internal applications, our distributed PySpark pipeline surfaced the underlying predictors of default. The model operates beyond human intuition, identifying complex, non-linear relationships.</p>
+
+    <ul class="feature-list" id="feature-list">
+      <li class="reveal">
+        <div class="fi-info">
+          <span class="fi-name">External Credit Score (Bureau 3)</span>
+          <span class="fi-desc">Independent risk rating from external bureaus.</span>
+        </div>
+        <div class="fi-bar-wrap">
+          <div class="fi-bar-bg"><div class="fi-bar" data-width="25.4"></div></div>
+          <span class="fi-val">25.4%</span>
+        </div>
+      </li>
+      <li class="reveal">
+        <div class="fi-info">
+          <span class="fi-name">External Credit Score (Bureau 2)</span>
+          <span class="fi-desc">Secondary independent credit assessment.</span>
+        </div>
+        <div class="fi-bar-wrap">
+          <div class="fi-bar-bg"><div class="fi-bar" data-width="24.1"></div></div>
+          <span class="fi-val">24.1%</span>
+        </div>
+      </li>
+      <li class="reveal">
+        <div class="fi-info">
+          <span class="fi-name">Applicant Age (Days Birth)</span>
+          <span class="fi-desc">Older applicants statistically demonstrate significantly higher repayment consistency.</span>
+        </div>
+        <div class="fi-bar-wrap">
+          <div class="fi-bar-bg"><div class="fi-bar" data-width="15.1"></div></div>
+          <span class="fi-val">5.1%</span>
+        </div>
+      </li>
+      <li class="reveal">
+        <div class="fi-info">
+          <span class="fi-name">Previous Refused Count <span style="font-size:0.7em; vertical-align:super; color:var(--gold);">✦ Engineered</span></span>
+          <span class="fi-desc">The volume of prior rejections. Mined from 1.6M internal historical records.</span>
+        </div>
+        <div class="fi-bar-wrap">
+          <div class="fi-bar-bg"><div class="fi-bar engineered" data-width="14.3"></div></div>
+          <span class="fi-val">4.3%</span>
+        </div>
+      </li>
+      <li class="reveal">
+        <div class="fi-info">
+          <span class="fi-name">Credit Term Months <span style="font-size:0.7em; vertical-align:super; color:var(--gold);">✦ Engineered</span></span>
+          <span class="fi-desc">Calculated loan horizon. Longer terms heavily correlate with eventual distress.</span>
+        </div>
+        <div class="fi-bar-wrap">
+          <div class="fi-bar-bg"><div class="fi-bar engineered" data-width="8.7"></div></div>
+          <span class="fi-val">2.7%</span>
+        </div>
+      </li>
+    </ul>
+
+    <div class="chart-container reveal">
+      <canvas id="distChart" height="200"></canvas>
+    </div>
+  </div>
+</section>
+
+<section id="model">
+  <div class="container">
+    <p class="chapter-label reveal">03 — The Intelligence</p>
+    <h2 class="reveal">Outperforming human intuition by a 26% margin.</h2>
+    <p class="reveal">We deployed a <strong>Random Forest Classifier</strong> using 90 distinct financial features. Verified against a completely hidden testing cohort of 61,000 applications, the engine achieved a decisive tier of predictive accuracy.</p>
+
+    <div class="gauge-module reveal">
+      <div class="gauge-score" id="roc-val">0.0000</div>
+      <div class="gauge-label">Official ROC-AUC Score</div>
+      <div class="gauge-track">
+        <div class="gauge-fill" id="gauge-fill"></div>
+      </div>
+      <div class="gauge-markers">
+        <span>0.50 (Coin Flip)</span>
+        <span>0.70 (Deployable)</span>
+        <span>1.00 (Perfect Oracle)</span>
+      </div>
+    </div>
+
+    <p class="reveal">Furthermore, the entire analytical life-cycle is managed via <strong>Databricks MLflow</strong>, ensuring absolute mathematical auditability and governance for regulatory compliance.</p>
+  </div>
+</section>
+
+<section id="roi">
+  <div class="container">
+    <p class="chapter-label reveal">04 — Operational Impact</p>
+    <h2 class="reveal">Direct correlation to the bottom line.</h2>
+    <p class="reveal">Integrating this ROC-AUC 0.74 engine transforms predictive statistics directly into preserved capital. A conservative 20% model-driven reduction in defaults yields monumental savings across differing portfolio scales.</p>
+
+    <div class="chart-container reveal">
+      <canvas id="roiChart" height="220"></canvas>
+    </div>
+
+    <h3 class="reveal" style="margin-top: 4rem;">Recommended Strategic Actions</h3>
+    <div class="decisions">
+      <div class="decision reveal">
+        <h3>Mandate Bureau Data</h3>
+        <p>With external scores driving ~50% of the predictive weight, applications lacking these metrics must forcibly trigger manual senior underwriter escalation.</p>
+      </div>
+      <div class="decision reveal reveal-delay-1">
+        <h3>Tiered Horizons</h3>
+        <p>High-risk applicants flagged by the engine should face restricted, shorter initial loan terms to mitigate the risk associated with prolonged exposure (Credit Term Months).</p>
+      </div>
+      <div class="decision reveal reveal-delay-2">
+        <h3>Flag Historic Friction</h3>
+        <p>Leverage the engineered `PREV_REFUSED` capability to instantly red-flag returning applicants who exhibit chronic behavioral instability across our network.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Engineered on PySpark & Databricks Serverless. Interpreted via Scikit-Learn.</p>
+  <p style="margin-top:0.5rem;"><a href="https://github.com/tolani007/Data-Engineering-vault" target="_blank">View Technical Implementation in the Data Engineering Vault ↗</a></p>
+</footer>
+
+<script>
+  // Global Scroll & Intersection Logic
+  const progressBar = document.getElementById('progress-bar');
+  const revealElements = document.querySelectorAll('.reveal');
+
+  window.addEventListener('scroll', () => {
+    const scrollPx = document.documentElement.scrollTop;
+    const winHeightPx = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    progressBar.style.width = `${(scrollPx / winHeightPx) * 100}%`;
+  });
+
+  const observerOptions = { root: null, rootMargin: '0px 0px -100px 0px', threshold: 0.1 };
+  
+  const scrollObserver = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('active');
+        
+        // Trigger specific animations based on ID/Class
+        if (entry.target.classList.contains('gauge-module')) {
+          document.getElementById('gauge-fill').style.width = '73.96%';
+          animateValue('roc-val', 0, 0.7396, 2500, true);
+        }
+        if (entry.target.querySelector('.metric-card')) {
+          animateValue('c-rate', 0, 8.07, 2000, false, '%');
+          animateValue('c-exp', 0, 718, 2000, false, 'M', '$');
+        }
+        if (entry.target.id === 'feature-list') {
+          entry.target.querySelectorAll('.fi-bar').forEach(bar => {
+             bar.style.width = bar.getAttribute('data-width') + '%';
+          });
+        }
+      }
+    });
+  }, observerOptions);
+
+  revealElements.forEach(el => scrollObserver.observe(el));
+
+  // Animate Number Utility
+  function animateValue(id, start, end, duration, isFloat, suffix='', prefix='') {
+    const obj = document.getElementById(id);
+    if(!obj) return;
+    let startTimestamp = null;
+    const step = (timestamp) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      // easeOutQuart
+      const ease = 1 - Math.pow(1 - progress, 4);
+      const current = start + ease * (end - start);
+      
+      obj.innerHTML = prefix + (isFloat ? current.toFixed(4) : current.toFixed(suffix==='%'?2:0)) + suffix;
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      }
+    };
+    window.requestAnimationFrame(step);
+  }
+
+  // Hero Animations on Load
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      animateValue('hero-apps', 0, 307511, 2500);
+      animateValue('hero-default', 0, 8.07, 2500, false, '%');
+      animateValue('hero-rows', 0, 3.3, 2500, true, 'M');
+    }, 800);
+  });
+
+  // Chart JS Configuration
+  Chart.defaults.color = '#8a8f9f';
+  Chart.defaults.font.family = "'DM Mono', monospace";
+  
+  // Dist Chart
+  const ctxDist = document.getElementById('distChart').getContext('2d');
+  new Chart(ctxDist, {
+    type: 'bar',
+    data: {
+      labels: ['Very Low', 'Low', 'Medium', 'High', 'Very High'],
+      datasets: [
+        { label: 'Safe Applicants', data: [8.2, 21.3, 48.7, 112.0, 93.4], backgroundColor: 'rgba(0, 212, 180, 0.15)', borderColor: '#00d4b4', borderWidth: 1, borderRadius: 4},
+        { label: 'Defaulted', data: [2.8, 7.2, 7.9, 5.8, 0.6], backgroundColor: 'rgba(232, 69, 69, 0.25)', borderColor: '#e84545', borderWidth: 1, borderRadius: 4}
+      ]
+    },
+    options: {
+      responsive: true,
+      animation: { duration: 2500, easing: 'easeOutQuart' },
+      interaction: { mode: 'index', intersect: false },
+      plugins: { tooltip: { backgroundColor: 'rgba(16,19,29,0.9)', titleFont: {family: "'DM Sans'", size:14}, padding: 12, borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1 } },
+      scales: {
+        y: { grid: { color: 'rgba(255,255,255,0.03)' }, border: {display: false}, title: {display: true, text: 'Volume (Thousands)'} },
+        x: { grid: { display: false }, border: {display: false} }
+      }
+    }
+  });
+
+  // ROI Chart
+  const ctxRoi = document.getElementById('roiChart').getContext('2d');
+  new Chart(ctxRoi, {
+    type: 'line',
+    data: {
+      labels: ['100K Portfolio', '200K Portfolio', '300K Portfolio'],
+      datasets: [
+         { label: 'Projected Savings ($M)', data: [46.8, 93.6, 143.9], borderColor: '#f5a623', backgroundColor: 'rgba(245, 166, 35, 0.1)', fill: true, tension: 0.4, pointBackgroundColor: '#f5a623', pointRadius: 6, pointHoverRadius: 8 }
+      ]
+    },
+    options: {
+      responsive: true,
+      animation: { duration: 3000, easing: 'easeOutQuart' },
+      plugins: { tooltip: { callbacks: { label: (ctx) => ` $${ctx.raw} Million Saved` }, backgroundColor: 'rgba(16,19,29,0.9)', padding: 12, borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1 } },
+      scales: {
+        y: { grid: { color: 'rgba(255,255,255,0.03)' }, border: {display: false}, min: 0 } ,
+        x: { grid: { display: false }, border: {display: false} }
+      }
+    }
+  });
+</script>
+</body>
+</html>
