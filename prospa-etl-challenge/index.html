@@ -163,33 +163,21 @@
             font-size: 1.5rem;
         }
 
-        .social-links {
-            display: flex;
-            justify-content: center;
-            gap: 1.5rem;
-            margin-top: 2rem;
-            flex-wrap: wrap;
-        }
-
-        .social-links a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.95rem;
-            font-family: 'JetBrains Mono', monospace;
-            padding: 0.5rem 1rem;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        .social-links a:hover {
+        .social-btn {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            background: rgba(0, 212, 180, 0.1);
             color: var(--accent-brand);
-            border-color: var(--accent-glow);
-            background: rgba(0, 212, 180, 0.05);
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 212, 180, 0.2);
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .social-btn:hover {
+            background: rgba(0, 212, 180, 0.2);
             transform: translateY(-2px);
         }
-
     </style>
 </head>
 <body>
@@ -199,12 +187,6 @@
             <div class="pill">Databricks Serverless ETL</div>
             <h1>Prospa Data Matrix</h1>
             <p class="subtitle">A high-performance Medallion Architecture transforming raw transactional flat files into an optimized Star Schema for interactive BI.</p>
-            <div class="social-links">
-                <a href="#" target="_blank">LinkedIn</a>
-                <a href="#" target="_blank">Twitter</a>
-                <a href="#" target="_blank">Instagram</a>
-                <a href="#" target="_blank">WhatsApp</a>
-            </div>
         </header>
 
         <div class="stats-grid">
@@ -254,6 +236,17 @@
             <h2>Sales Velocity Top 3 Selling Months</h2>
             <div class="chart-container">
                 <canvas id="monthsChart"></canvas>
+            </div>
+        </div>
+
+        <div class="glass-card" style="text-align: center; margin-top: 4rem;">
+            <h2>Reach Out</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">Interested in collaborating or discussing data engineering? Connect with me!</p>
+            <div style="display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap;">
+                <a href="https://www.linkedin.com/in/tolani-akinola" target="_blank" class="social-btn">LinkedIn</a>
+                <a href="https://x.com/tolaniakinola_" target="_blank" class="social-btn">Twitter / X</a>
+                <a href="https://www.instagram.com/tolaniakinola?igsh=OHlwbjBud2N4ZThn&utm_source=qr" target="_blank" class="social-btn">Instagram</a>
+                <a href="https://wa.me/12264572143" target="_blank" class="social-btn" id="wa-btn">WhatsApp</a>
             </div>
         </div>
 
