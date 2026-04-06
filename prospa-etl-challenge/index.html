@@ -163,6 +163,33 @@
             font-size: 1.5rem;
         }
 
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .social-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 0.5rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .social-links a:hover {
+            color: var(--accent-brand);
+            border-color: var(--accent-glow);
+            background: rgba(0, 212, 180, 0.05);
+            transform: translateY(-2px);
+        }
+
     </style>
 </head>
 <body>
@@ -172,6 +199,12 @@
             <div class="pill">Databricks Serverless ETL</div>
             <h1>Prospa Data Matrix</h1>
             <p class="subtitle">A high-performance Medallion Architecture transforming raw transactional flat files into an optimized Star Schema for interactive BI.</p>
+            <div class="social-links">
+                <a href="#" target="_blank">LinkedIn</a>
+                <a href="#" target="_blank">Twitter</a>
+                <a href="#" target="_blank">Instagram</a>
+                <a href="#" target="_blank">WhatsApp</a>
+            </div>
         </header>
 
         <div class="stats-grid">
