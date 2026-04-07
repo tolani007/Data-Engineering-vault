@@ -1,82 +1,66 @@
-# Privia Health Data Engineering Challenge
+# Privia Health Data Engineering Pipeline
 
-## What is this
+[![Interactive Data Story](https://img.shields.io/badge/View-Interactive_Data_Story-00D4B4?style=for-the-badge)](https://tolani007.github.io/Data-Engineering-vault/privia-health-challenge/)
 
-A data engineering take-home challenge from Privia Health. The task: take a messy Excel file with patient demographics and risk scores, clean it, transform it, and load it into queryable Delta tables on Databricks.
+## 🚀 Overview
 
-The data is fictional. The code is real.
+This repository demonstrates an enterprise-grade data engineering solution for processing and transforming messy, wide-format medical records into a queryable, scalable Delta Lake architecture. Built using **PySpark and Databricks**, this project showcases my ability to untangle complex real-world data constraints, enforce data quality, and optimize for downstream operational analytics.
 
----
-
-## The problem
-
-I was given a file called `Privia Family Medicine 113018.xlsx`. It has three sections in one sheet: Demographics, Quarters, and Risk Data. The file naming convention carries two facts the sheet itself doesn't: the provider group name and the file date — both packed into the filename. More files from different groups will arrive later, so I had to write the ETL to handle any file that follows the same naming pattern, not just this one.
+**👉 [Experience the Interactive Data Story here](https://tolani007.github.io/Data-Engineering-vault/privia-health-challenge/)**
 
 ---
 
-## What I built
+## 🛠 Business Problem
 
-Two ETL notebooks and one test notebook, all running on Databricks with Delta Lake.
+Healthcare datasets often arrive in non-standardized, heavily denormalized formats. In this scenario, I ingested a raw Excel deliverable containing patient demographics and longitudinally locked risk scores (Q1 & Q2). 
 
-**Notebook 01 — Demographics ETL**
-
-I read the Excel file with pandas (PySpark can't read xlsx natively), sliced out the Demographics columns, and cleaned three things the challenge required: middle names get reduced to just the first letter, the Sex field goes from 0/1 to M/F, and I parsed the provider group and file date out of the filename using a regex. Then I handed it to Spark and wrote it as a Delta table.
-
-**Notebook 02 — Risk & Quarters ETL**
-
-This one needed an unpivot. The raw data is wide — one row per patient, with Q1 and Q2 sitting side by side. I needed it long — one row per patient per quarter. I used pandas `melt` to do that, then joined the attribution and risk halves back together. After that I filtered to only the patients whose risk score went up from Q1 to Q2. Wrote the result to a second Delta table.
-
-**Notebook 03 — Tests**
-
-I wrote unit tests for every piece of logic that doesn't need a cluster: the filename parser, the middle initial function, the sex code mapper, the risk increase filter, and the unpivot shape. None of these tests hit the actual Excel file or a database — they use tiny in-memory DataFrames so they run in a few seconds.
+The challenges were:
+- Critical metadata (provider group, date) was embedded within the filename rather than the rows.
+- Temporal data (Quarters) were spread across columns (wide format) making it impossible to perform automated trend analysis.
+- Nulls, non-standardized flags (0/1 for binary Sex), and unstructured text required programmatic normalization.
 
 ---
 
-## The core idea behind each transformation
+## 🏗 Technical Architecture & Implementation
 
-**Filename parsing:** I use a regex that says "match any text, then exactly 6 digits, then .xlsx." The 6 digits are always MMDDYY. Everything before them is the group name. This works regardless of how long the group name is.
+I developed a robust ETL pipeline consisting of two core stages and a comprehensive unit-testing suite.
 
-**Middle initial:** If the middle name field is blank or null, return null. Otherwise take the first character and uppercase it. That's it.
+### 1. Ingestion & Demographic Standardization (`01_demographics_etl.py`)
+- Used `pandas` and `regex` extractors to parse operational metadata from the physical filename.
+- Standardized text formats (middle initials) and mapped categorical variables gracefully preventing brittle pipeline failures on missing data.
+- Loaded the clean data frame cleanly into a Delta table on Databricks.
 
-**Sex mapping:** 0 → M, 1 → F. Anything unexpected → null. I chose null over a crash because future files might have gaps.
+### 2. Temporal Unpivoting & Risk Calculation (`02_risk_quarters_etl.py`)
+- Sliced the wide format dataset and utilized `pandas.melt()` to unpivot the temporal quarters into a scalable, long-format truth.
+- Joined the isolated risk and attribute halves back together. 
+- Isolated the signal: mathematically filtered for patients whose risk scores *deteriorated* from Q1 to Q2, providing immediate actionable clinical intelligence.
 
-**Unpivot:** I melt the attributed columns into one column and the risk columns into another, separately, then join them on ID + Quarter. This gives me the long format the challenge asked for.
-
-**Risk increase filter:** I compare Q1 and Q2 risk scores per patient in the wide format first, collect the IDs that went up, then filter the long table to just those IDs. Doing the comparison before the unpivot is cleaner because Q1 and Q2 are on the same row.
-
----
-
-## How to run it
-
-1. Upload `Privia Family Medicine 113018.xlsx` to your Databricks Volume at:
-   `/Volumes/workspace/default/prospa_volume/`
-
-2. Import the three notebooks from the `notebooks/` folder into your Databricks workspace:
-   `Workspace → Import → select .py file`
-
-3. Attach a cluster and run the notebooks in order: `01`, `02`, `03`.
-
-4. Query the output tables:
-   ```sql
-   SELECT * FROM workspace.default.demographics;
-   SELECT * FROM workspace.default.risk_quarters;
-   ```
+### 3. Test-Driven Data Engineering (`03_tests.py`)
+- Validated all core logic locally using `pytest` against mocked DataFrames to ensure absolute confidence before cluster execution.
+- Covered filename parsing, unpivots, sex transformations, and risk isolations without needing a heavy Spark cluster for fast CI/CD feedback loops.
 
 ---
 
-## What I would add with more time
+## 🔮 Future Architecture State
 
-- A job that runs both ETLs on a schedule when a new file lands in the volume
-- A merge strategy instead of overwrite, so re-delivering the same file doesn't duplicate data
-- Schema validation on ingest so bad data gets caught at the door, not downstream
-- A logging table that records every file processed, row counts, and any errors
+To scale this MVP to a fully autonomous enterprise pipeline, I would integrate:
+1. **Event-Driven Execution:** Utilizing Databricks Auto Loader or Workflows to trigger the pipeline the exact second a new data payload arrives.
+2. **Idempotent Upserts:** Moving from `overwrite` to `MERGE INTO`, ensuring that re-processed files update records but never duplicate clinical data.
+3. **Strict Schema Validation:** Adding Delta Live Tables (`CONSTRAINT`) expectations to trap malformed records before they contaminate downstream BI.
+4. **Comprehensive Auditing:** A centralized metadata table tracking every ingested file, row counts, and exceptions for 100% operational transparency.
 
 ---
 
-## Tech stack
+## 💻 Tech Stack
+- **Compute & Architecture:** Databricks (Unity Catalog, Delta Lake) 
+- **Languages:** Python, PySpark 3.5, SQL
+- **Libraries:** pandas 2.0 (melting/unpivoting), pytest (TDD/validation), openpyxl
 
-- Databricks (Unity Catalog, Delta Lake)
-- PySpark 3.5
-- pandas 2.0 (for xlsx reading and melt)
-- pytest (for unit tests)
-- openpyxl (pandas xlsx backend)
+---
+
+## 📬 Let's Connect
+I am actively seeking roles where I can architect robust data pipelines and drive operational efficiency. 
+Feel free to reach out to discuss data engineering, analytics, and infrastructure!
+- [LinkedIn](https://www.linkedin.com/in/tolani-akinola)
+- [Twitter / X](https://x.com/tolaniakinola_)
+- [GitHub](https://github.com/tolani007)

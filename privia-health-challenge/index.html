@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Data Behind Care — Privia Health Pipeline</title>
+  <meta name="description" content="A data engineering story on transforming messy healthcare records into a robust analytic foundation." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  
+  <style>
+    :root {
+      --bg: #080a0f;
+      --surface: #10131d;
+      --surface-hover: #151926;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-light: rgba(255, 255, 255, 0.15);
+      --accent: #5a3cff; /* Subdued Purple/Indigo */
+      --gold: #f5a623;
+      --teal: #00d4b4;
+      --text: #eef0f6;
+      --muted: #8a8f9f;
+      --font-serif: 'Playfair Display', Georgia, serif;
+      --font-sans: 'DM Sans', system-ui, sans-serif;
+      --font-mono: 'DM Mono', monospace;
+      --ease-out: cubic-bezier(0.215, 0.61, 0.355, 1);
+      --ease-calm: cubic-bezier(0.33, 1, 0.68, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; background: var(--bg); }
+    body {
+      color: var(--text); font-family: var(--font-sans);
+      font-weight: 300; line-height: 1.8; overflow-x: hidden;
+    }
+
+    /* ─── CALMING AMBIENT BACKGROUND ─── */
+    .ambient-bg {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      z-index: -1; overflow: hidden; pointer-events: none;
+    }
+    .ambient-blob {
+      position: absolute; border-radius: 50%; filter: blur(120px);
+      opacity: 0.15; animation: float 20s infinite alternate ease-in-out;
+    }
+    .ambient-blob.primary {
+      background: var(--accent); width: 50vw; height: 50vw; top: -10vw; left: -10vw;
+    }
+    .ambient-blob.secondary {
+      background: var(--teal); width: 40vw; height: 40vw; bottom: -10vw; right: -5vw;
+      animation-delay: -10s;
+    }
+    @keyframes float {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(5vw, 10vh) scale(1.1); }
+    }
+
+    #progress-bar {
+      position: fixed; top: 0; left: 0; height: 2px;
+      background: linear-gradient(90deg, var(--teal), var(--accent));
+      width: 0%; z-index: 1000; transition: width 0.3s var(--ease-calm);
+    }
+
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1.5rem 4rem; background: linear-gradient(to bottom, rgba(8,10,15,0.9), transparent);
+      backdrop-filter: blur(10px); z-index: 100; opacity: 0; animation: fadeDown 1.5s var(--ease-out) 0.5s forwards;
+    }
+    .nav-logo { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; }
+    
+    .nav-links { display: flex; gap: 2.5rem; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; transition: color 0.4s var(--ease-calm); }
+    .nav-links a:hover { color: var(--text); }
+
+    .social-btn {
+      display: inline-block;
+      padding: 0.8rem 1.5rem;
+      background: rgba(0, 212, 180, 0.1);
+      color: var(--teal);
+      text-decoration: none;
+      border-radius: 8px;
+      border: 1px solid rgba(0, 212, 180, 0.2);
+      font-weight: 600;
+      transition: all 0.3s var(--ease-calm);
+    }
+    .social-btn:hover {
+      background: rgba(0, 212, 180, 0.2);
+      transform: translateY(-2px);
+    }
+    
+    section { padding: 9rem 0; position: relative; }
+    .container { max-width: 800px; margin: 0 auto; padding: 0 2rem; }
+
+    #hero {
+      min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
+      padding: 8rem 2rem 8rem; position: relative; text-align: center;
+    }
+    .hero-label {
+      font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.25em;
+      text-transform: uppercase; color: var(--teal); margin-bottom: 2rem;
+      opacity: 0; animation: fadeUp 1.2s var(--ease-out) 0.2s forwards;
+    }
+    .hero-title {
+      font-family: var(--font-serif); font-size: clamp(2.5rem, 6vw, 5rem);
+      line-height: 1.1; font-weight: 400; margin-bottom: 2rem;
+      opacity: 0; animation: fadeUp 1.2s var(--ease-out) 0.4s forwards;
+    }
+    .hero-title em { color: var(--accent); font-style: italic; }
+    
+    .hero-subtitle {
+      font-size: 1.2rem; color: var(--muted); max-width: 600px; margin: 0 auto 4rem;
+      line-height: 1.8; opacity: 0; animation: fadeUp 1.2s var(--ease-out) 0.6s forwards;
+    }
+
+    .scroll-cue {
+      position: absolute; bottom: 3rem; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 1rem;
+      color: var(--muted); font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase;
+      opacity: 0; animation: fadeUp 1.2s var(--ease-out) 1.5s forwards;
+    }
+    .scroll-line { width: 1px; height: 40px; background: linear-gradient(to bottom, var(--muted), transparent); position: relative; overflow: hidden; }
+    .scroll-line::after {
+      content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 50%;
+      background: var(--text); animation: scrollDrop 2s infinite cubic-bezier(0.645, 0.045, 0.355, 1);
+    }
+    @keyframes scrollDrop { 0% { transform: translateY(-100%); opacity: 0;} 50% { opacity: 1; } 100% { transform: translateY(200%); opacity: 0; } }
+
+    h2 { font-family: var(--font-serif); font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 400; line-height: 1.2; margin-bottom: 1.5rem; }
+    h3 { font-family: var(--font-sans); font-size: 1.25rem; font-weight: 500; margin-bottom: 1rem; color: var(--text); }
+    p { margin-bottom: 1.5rem; font-size: 1.1rem; color: #a9afc1; }
+    p strong { color: var(--text); font-weight: 500; }
+    
+    .chapter-label {
+      font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--teal); margin-bottom: 1rem;
+      display: flex; align-items: center; gap: 1rem;
+    }
+    .chapter-label::before { content:''; width: 30px; height: 1px; background: var(--teal); }
+
+    .callout {
+      background: var(--surface); border-radius: 12px; padding: 2rem;
+      margin: 3rem 0; position: relative; overflow: hidden;
+      transition: transform 0.4s var(--ease-calm), box-shadow 0.4s var(--ease-calm);
+      border: 1px solid var(--border);
+    }
+    .callout:hover {
+      transform: translateY(-5px); box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      border-color: var(--border-light);
+    }
+    .callout::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+      background: linear-gradient(to bottom, var(--accent), var(--teal));
+    }
+    .callout p { margin: 0; font-size: 1.05rem; }
+
+    .decisions { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin: 3rem 0; }
+    .decision {
+      background: var(--surface); border-left: 3px solid var(--border);
+      padding: 2.5rem 2rem; border-radius: 0 12px 12px 0;
+      transition: all 0.4s var(--ease-calm);
+    }
+    .decision:hover { transform: translateX(8px); border-left-color: var(--teal); background: var(--surface-hover); }
+    .decision h3 { font-family: var(--font-serif); font-size: 1.4rem; margin-bottom: 1rem; color: var(--text); }
+    .decision p { font-size: 1rem; color: var(--muted); margin: 0; }
+
+    .feature-list { list-style: none; margin: 3rem 0; counter-reset: feature; }
+    .feature-list li {
+      display: grid; grid-template-columns: 2rem 1fr; align-items: center; gap: 1.5rem;
+      padding: 1.5rem; border-radius: 12px; margin-bottom: 0.5rem;
+      background: transparent; transition: all 0.4s var(--ease-calm);
+      border: 1px solid transparent; cursor: default;
+    }
+    .feature-list li:hover {
+      background: var(--surface); border-color: var(--border);
+      transform: scale(1.02); box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .feature-list li::before {
+      counter-increment: feature;
+      content: "0" counter(feature) ".";
+      font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted);
+    }
+    .fi-info { display: flex; flex-direction: column; gap: 0.3rem; }
+    .fi-name { font-size: 1.1rem; color: var(--text); font-weight: 400; font-family: var(--font-serif); }
+    .fi-desc { font-size: 0.9rem; color: var(--muted); line-height: 1.5; }
+
+    .reveal { opacity: 0; transform: translateY(40px); transition: opacity 1s var(--ease-out), transform 1s var(--ease-out); }
+    .reveal.active { opacity: 1; transform: translateY(0); }
+    .reveal-delay-1 { transition-delay: 0.2s; }
+    .reveal-delay-2 { transition-delay: 0.4s; }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+    footer { padding: 4rem 2rem; text-align: center; border-top: 1px solid var(--border); margin-top: 6rem; color: var(--muted); font-size: 0.85rem; }
+    footer a { color: var(--teal); text-decoration: none; transition: color 0.3s; }
+    footer a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+
+<div class="ambient-bg">
+  <div class="ambient-blob primary"></div>
+  <div class="ambient-blob secondary"></div>
+</div>
+
+<div id="progress-bar"></div>
+
+<nav>
+  <span class="nav-logo">Privia Health</span>
+  <div class="nav-links">
+    <a href="https://www.linkedin.com/in/tolani-akinola" target="_blank">LinkedIn</a>
+    <a href="https://github.com/tolani007" target="_blank">GitHub</a>
+  </div>
+</nav>
+
+<section id="hero">
+  <div class="container">
+    <p class="hero-label">Data Engineering Flow</p>
+    <h1 class="hero-title">Untangling <br>The <em>Data</em></h1>
+    <p class="hero-subtitle">Transforming messy, static Excel spreadsheets in the medical sphere into robust, automated Delta Lake pipelines for real-time analytics.</p>
+  </div>
+  <div class="scroll-cue">
+    <span>Scroll to Discover</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<section id="problem">
+  <div class="container">
+    <p class="chapter-label reveal">01 — The Chaos of the Spreadsheet</p>
+    <h2 class="reveal">Critical data points, trapped in wide formats.</h2>
+    <p class="reveal">The starting point was a single complex Excel file containing Patient Demographics alongside Quarter 1 and Quarter 2 Risk Scores sitting awkwardly row-by-row. In healthcare analytics, unstructured layouts are barriers to scale.</p>
+
+    <div class="callout reveal reveal-delay-1">
+      <p>Data was packed tight: arbitrary naming conventions hiding provider origins, missing middle initials, binarily coded sexes. But most critically: temporal data like risk progression was locked in a strictly wide layout, making trend analysis impossible.</p>
+    </div>
+  </div>
+</section>
+
+<section id="findings">
+  <div class="container">
+    <p class="chapter-label reveal">02 — Finding the Signal</p>
+    <h2 class="reveal">Reshaping data reveals the true narrative.</h2>
+    <p class="reveal">Through a PySpark and Pandas ETL process, we unwound the dataset from wide to long. <strong>Pandas melt()</strong> allowed us to unpivot quarters, placing Q1 and Q2 sequentially to finally surface the core objective: tracking the escalation.</p>
+
+    <ul class="feature-list" id="feature-list">
+      <li class="reveal">
+        <div class="fi-info">
+          <span class="fi-name">Regex & Feature Extraction</span>
+          <span class="fi-desc">Parsing provider names and delivery dates algorithmically from filenames—no manual input required.</span>
+        </div>
+      </li>
+      <li class="reveal">
+        <div class="fi-info">
+          <span class="fi-name">Demographic Standardization</span>
+          <span class="fi-desc">Truncating names to initials, mapping binary code (0/1) to readable Sex formats (M/F), handling nulls gracefully.</span>
+        </div>
+      </li>
+      <li class="reveal">
+        <div class="fi-info">
+          <span class="fi-name">Risk Increase Isolation</span>
+          <span class="fi-desc">Aggregating the unpivoted risk metric to specifically filter and flag patients whose condition mathematically deteriorated across quarters.</span>
+        </div>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<section id="future">
+  <div class="container">
+    <p class="chapter-label reveal">03 — The Architecture of Tomorrow</p>
+    <h2 class="reveal">Transforming an initial script into an enterprise pipeline.</h2>
+    <p class="reveal">To progress from a working MVP to an industrialized Databricks workflow, we outlined four critical structural advancements that will eliminate administrative burden.</p>
+
+    <div class="decisions">
+      <div class="decision reveal">
+        <h3>Event-Driven Ingestion</h3>
+        <p>Using Databricks Auto Loader, pipelines should trigger execution the instant a new provider file lands in the volume—replacing polling and manual execution with pure automation.</p>
+      </div>
+      <div class="decision reveal reveal-delay-1">
+        <h3>Idempotent Merging</h3>
+        <p>Replacing naive overwrites with a strict <code>MERGE INTO</code> framework. Re-delivering a file shouldn't corrupt the lake; upserts guarantee uniqueness and an accurate history.</p>
+      </div>
+      <div class="decision reveal">
+        <h3>Schema Validation</h3>
+        <p>Bad records require a bouncer. Implementing Delta Live Tables expectations immediately halts corrupt schema propagation, trapping malformed records before they contaminate dashboards.</p>
+      </div>
+      <div class="decision reveal reveal-delay-1">
+        <h3>Comprehensive Auditing</h3>
+        <p>A centralized telemetry log tracking every file touched, processed row volumes, schema anomalies, and exceptions—granting real-time operational visibility.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="impact">
+  <div class="container">
+    <p class="chapter-label reveal">04 — Why It Matters</p>
+    <h2 class="reveal">In healthcare, bad data is a clinical risk.</h2>
+    <p class="reveal">A data pipeline is only as valuable as the trust clinical users place in it. By standardizing ingest, architecting defensive schema validations, and strictly logging every transaction, we move from handling "spreadsheets" to sustaining a governed Data Lakehouse.</p>
+    <p class="reveal">When these foundations are built, the engineering team stops acting as data custodians and starts driving innovation.</p>
+  </div>
+</section>
+
+<section id="reach-out" style="padding-top: 0;">
+  <div class="container reveal" style="text-align: center;">
+    <h2>Reach Out</h2>
+    <p style="color: var(--muted); margin-bottom: 2rem;">Interested in collaborating or discussing data engineering? Connect with me!</p>
+    <div style="display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap;">
+      <a href="https://www.linkedin.com/in/tolani-akinola" target="_blank" class="social-btn">LinkedIn</a>
+      <a href="https://x.com/tolaniakinola_" target="_blank" class="social-btn">Twitter / X</a>
+      <a href="https://www.instagram.com/tolaniakinola?igsh=OHlwbjBud2N4ZThn&utm_source=qr" target="_blank" class="social-btn">Instagram</a>
+      <a href="https://wa.me/12264572143" target="_blank" class="social-btn">WhatsApp</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Architected on Databricks & PySpark.</p>
+</footer>
+
+<script>
+  const progressBar = document.getElementById('progress-bar');
+  const revealElements = document.querySelectorAll('.reveal');
+
+  window.addEventListener('scroll', () => {
+    const scrollPx = document.documentElement.scrollTop;
+    const winHeightPx = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    progressBar.style.width = `${(scrollPx / winHeightPx) * 100}%`;
+  });
+
+  const observerOptions = { root: null, rootMargin: '0px 0px -100px 0px', threshold: 0.1 };
+  
+  const scrollObserver = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('active');
+      }
+    });
+  }, observerOptions);
+
+  revealElements.forEach(el => scrollObserver.observe(el));
+</script>
+
+</body>
+</html>
