@@ -1,0 +1,334 @@
+:root {
+    --bg-dark: #0f172a;
+    --bg-darker: #020617;
+    --primary: #8b5cf6;
+    --primary-glow: rgba(139, 92, 246, 0.5);
+    --secondary: #3b82f6;
+    --accent: #f43f5e;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --glass-bg: rgba(30, 41, 59, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-darker);
+    color: var(--text-main);
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+h1, h2, h3, h4 {
+    font-family: 'Outfit', sans-serif;
+    color: #ffffff;
+}
+
+/* Animated Dark Gradient Background */
+.gradient-bg {
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 50% 50%, var(--bg-dark) 0%, var(--bg-darker) 100%);
+    z-index: -1;
+    animation: pulseBg 15s ease-in-out infinite alternate;
+}
+
+@keyframes pulseBg {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.1); }
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Glassmorphism Classes */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 2.5rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    margin-bottom: 2rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-panel:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(139, 92, 246, 0.15);
+}
+
+.glass-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--glass-border);
+    border-radius: 100px;
+    margin-bottom: 3rem;
+    position: sticky;
+    top: 20px;
+    z-index: 100;
+}
+
+.logo h1 {
+    font-size: 1.5rem;
+    letter-spacing: -0.5px;
+}
+
+.logo p {
+    font-size: 0.85rem;
+    color: var(--primary);
+    font-weight: 500;
+}
+
+nav a {
+    color: var(--text-muted);
+    text-decoration: none;
+    margin-left: 2rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+nav a:hover {
+    color: var(--primary);
+}
+
+/* Hero Section */
+.hero {
+    text-align: center;
+    padding: 5rem 2rem;
+}
+
+.badge {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--secondary), var(--primary));
+    color: white;
+    padding: 0.4rem 1rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 15px var(--primary-glow);
+}
+
+.hero h2 {
+    font-size: 3.5rem;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(to right, #fff, #94a3b8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero p {
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    max-width: 800px;
+    margin: 0 auto 2rem;
+}
+
+.tech-stack {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.tech-stack span {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 0.5rem 1.2rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #cbd5e1;
+}
+
+/* Architecture */
+.architecture-section h3 {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 2rem;
+}
+
+.arch-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.node {
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid var(--primary);
+    padding: 2rem;
+    border-radius: 12px;
+    text-align: center;
+    width: 220px;
+}
+
+.node.spark {
+    border-color: #f59e0b;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
+}
+
+.node i {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: var(--primary);
+}
+
+.node.spark i {
+    color: #f59e0b;
+}
+
+.arrow {
+    font-size: 2rem;
+    color: var(--text-muted);
+}
+
+/* Sales Pipeline */
+.sales-pipeline {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+}
+
+.view-list {
+    margin-top: 1.5rem;
+    list-style: none;
+}
+
+.view-list li {
+    background: rgba(0,0,0,0.2);
+    margin-bottom: 0.8rem;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid var(--primary);
+}
+
+.highlight-stat {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+}
+
+.big-number {
+    font-size: 2.5rem;
+    font-family: 'Outfit';
+    font-weight: 800;
+    color: var(--accent);
+    margin: 1rem 0;
+    text-shadow: 0 0 20px rgba(244, 63, 94, 0.4);
+}
+
+/* Twitter Section */
+.twitter-section {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+    border-color: #1da1f2;
+}
+
+.header-with-icon {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.header-with-icon i {
+    font-size: 2rem;
+    color: #1da1f2;
+}
+
+.tweet-mockup {
+    background: #15202b;
+    border: 1px solid #38444d;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+    max-width: 600px;
+}
+
+.tweet-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #1da1f2;
+    margin-right: 1rem;
+}
+
+.tweet-user strong { color: white; display: block; }
+.tweet-user span { color: #8899a6; font-size: 0.9rem; }
+
+.tweet-body {
+    font-size: 1.1rem;
+    line-height: 1.5;
+}
+
+.tech-box {
+    background: #000;
+    border-radius: 8px;
+    padding: 1.5rem;
+    font-family: monospace;
+    color: #a5b4fc;
+    border-left: 2px solid var(--secondary);
+    overflow-x: auto;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 3rem 0;
+    color: var(--text-muted);
+}
+
+.social-links a {
+    color: var(--primary);
+    text-decoration: none;
+    margin: 0 1rem;
+    font-weight: 600;
+}
+
+/* Animations */
+.fade-in, .slide-up {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+    .sales-pipeline { grid-template-columns: 1fr; }
+    .arch-container { flex-direction: column; }
+    .arrow { transform: rotate(90deg); margin: 1rem 0; }
+    .hero h2 { font-size: 2.5rem; }
+}
